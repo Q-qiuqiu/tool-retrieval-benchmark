@@ -1,0 +1,4 @@
+# Python-generated files
+toolret/__pycache__/
+*.json
+cache/
