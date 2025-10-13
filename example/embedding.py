@@ -3,8 +3,8 @@
 from toolret.eval import eval_retrieval
 from toolret.config import _MODEL, _TASK
 import os
-os.environ['HTTP_PROXY'] = 'http://agent.baidu.com:8891'
-os.environ['HTTPS_PROXY'] = 'http://agent.baidu.com:8891'
+os.environ['HTTP_PROXY'] = 'http://10.134.110.145:7890'
+os.environ['HTTPS_PROXY'] = 'http://10.134.110.145:7890'
 
 model = _MODEL[0]
 print(model)

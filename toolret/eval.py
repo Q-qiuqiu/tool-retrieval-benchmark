@@ -15,7 +15,7 @@ import torch
 import os
 import json
 from collections import defaultdict
-from typing import override
+from typing_extensions import override
 
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
@@ -257,7 +257,7 @@ def eval_retrieval(model_name: str,
 
     # encode the tools to embeddings
     tools = load_tools(category)
-    print(len(tools))
+    print("tools number: ", len(tools))
     tool_embeddings = model.encode_tools(tools, batch_size)
     tool_embeddings = np.asarray(tool_embeddings, dtype=np.float32)
     dim = tool_embeddings.shape[1]
@@ -300,7 +300,7 @@ def eval_retrieval(model_name: str,
         # print_results(collection)
     return collection
 
-from typing import override
+from typing_extensions import override
 
 class RankModel:
     def __init__(self, model_name):
