@@ -1,0 +1,1 @@
+python query_generate.py --task 'all' --topk 20 --embed-model "/data/labshare/Param/ToolRet/e5-small-v2"

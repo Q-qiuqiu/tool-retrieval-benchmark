@@ -66,7 +66,6 @@ def _call_openai(messages: List[Dict[str, str]]):
         "model": model,
         "messages": messages,
         "temperature": 0.0,
-        "response_format": {"type": "json_object"},
     }
     resp = requests.post(url, headers=headers, json=payload, timeout=120)
     resp.raise_for_status()
