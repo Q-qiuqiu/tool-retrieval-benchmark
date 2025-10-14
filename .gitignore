@@ -3,3 +3,4 @@ toolret/__pycache__/
 *.json
 cache/
 *.txt
+logs/
