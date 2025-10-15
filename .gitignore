@@ -4,3 +4,4 @@ toolret/__pycache__/
 cache/
 *.txt
 logs/
+log/
