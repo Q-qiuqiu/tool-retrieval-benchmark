@@ -13,8 +13,8 @@ from toolret.eval import task_split
 
 def _read_openai_config():
     api_key = "sk-IS7bpO9PnKkn0SxQ711cA3110e8a4a8183Ed5215D4F8Dc1b"#sk-IS7bpO9PnKkn0SxQ711cA3110e8a4a8183Ed5215D4F8Dc1b
-    base_url ="https://aihubmix.com/v1"#http://localhost:7001/v1/
-    model = "DeepSeek-V3" #/data/labshare/Param/gpt-oss/gpt-oss-20b
+    base_url = "http://10.137.144.97:7001/v1/" #"https://aihubmix.com/v1"
+    model =  "/data/labshare/Param/Qwen/Qwen3-30B-A3B-Instruct-2507" #"DeepSeek-V3"
     if not api_key:
         raise RuntimeError("缺少 OPENAI_API_KEY 环境变量")
     if not base_url:
@@ -94,18 +94,18 @@ def run(task: str = "all", from_top_k: int = 20, embed_model: str = None) -> Dic
     # 1) 先运行第一阶段检索（与仓库评测保持一致），得到每个 query 的候选工具集合
     # 为避免重复检索，直接利用 eval_retrieval 的输出文件携带候选（scores 不重要，只要候选ID）
     tasks = task
-    output_file = f"retrieval_{task}.json"
-    json_log ="run_log.json"
+    output_file = f"log/retrieval_{task}.json"
+    json_log = f"log/run_log_{task}.json"
     model_name = embed_model or _MODEL[0]
-    # eval_result = eval_retrieval(model_name=model_name,
-    #                    tasks=tasks,
-    #                    category='all',
-    #                    batch_size=4,
-    #                    output_file=output_file,
-    #                    top_k=max(from_top_k, 1),
-    #                    is_inst=True,
-    #                    is_print=False)
-
+    eval_result = eval_retrieval(model_name=model_name,
+                       tasks=tasks,
+                       category='all',
+                       batch_size=4,
+                       output_file=output_file,
+                       top_k=max(from_top_k, 1),
+                       is_inst=True,
+                       is_print=False)
+    #print("eval_Result:", eval_result)
     # 读取检索结果 {task: {qid: {tool_id: score}}}
     _tasks = task_split(tasks)
     tools_all = load_tools('all')
@@ -122,7 +122,7 @@ def run(task: str = "all", from_top_k: int = 20, embed_model: str = None) -> Dic
     },
     "by_task": {}
 }
-    current_task = "gta"
+    current_task = task
     if current_task is not None:
     #for current_task in tqdm(_tasks):
         report["by_task"].setdefault(current_task, [])
@@ -139,7 +139,7 @@ def run(task: str = "all", from_top_k: int = 20, embed_model: str = None) -> Dic
             cand_ids = [k for k, _ in cand_sorted]
             cand_tools = [tools_map[int(tid)] if isinstance(tid, int) else tools_map.get(tid) for tid in cand_ids]
             cand_tools = [t for t in cand_tools if t is not None]
-            print("retreval:",cand_ids)
+            #print("retreval:",cand_ids)
             # 没有候选则跳过
             if not cand_tools:
                 continue
@@ -154,14 +154,14 @@ def run(task: str = "all", from_top_k: int = 20, embed_model: str = None) -> Dic
 
             content = _call_openai(messages)
             selected_ids = _parse_selection(content)
-            print("selected_ids:",selected_ids)
+            #print("selected_ids:",selected_ids)
             # 只评估 Top-1（若多选则取第一项），并用于 Accuracy 统计
             top1 = str(selected_ids[0]) if selected_ids else None
             # 评测标签
             labels = json.loads(q['labels']) if isinstance(q['labels'], str) else q['labels']
             gold_first = str(labels[0]['id']) if labels else None
             all_qrels[qid] = {gold_first: 1} if gold_first is not None else {}
-            print("gold:",gold_first)
+            #print("gold:",gold_first)
 
             #写入日志
             entry = {
@@ -188,8 +188,8 @@ def run(task: str = "all", from_top_k: int = 20, embed_model: str = None) -> Dic
                 # 命中：答案集合中存在且 relevance>0
                 if top1 in all_qrels[qid] and all_qrels[qid][top1] > 0:
                     total_correct += 1
-            print("all_qrels:",all_qrels)
-            print("all_results:",all_results)
+            # print("all_qrels:",all_qrels)
+            # print("all_results:",all_results)
     os.makedirs(os.path.dirname(json_log) or ".", exist_ok=True)
     with open(json_log, "w", encoding="utf-8") as f:
         json.dump(report, f, ensure_ascii=False, indent=2)
@@ -197,7 +197,7 @@ def run(task: str = "all", from_top_k: int = 20, embed_model: str = None) -> Dic
     acc_top1 = round((total_correct / max(total_queries, 1)), 5)
     # 附加一个简单准确率
     #trec_metrics["ACC@1"] = acc_top1
-    return acc_top1
+    return 100*acc_top1
 
 
 if __name__ == "__main__":
@@ -210,6 +210,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     metrics = run(task=args.task, from_top_k=args.topk, embed_model=args.embed_model)
-    print(json.dumps(metrics, ensure_ascii=False, indent=2))
+    print(f"Accuracy@1: {metrics:.4f}%")
 
 
